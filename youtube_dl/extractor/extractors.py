@@ -735,6 +735,10 @@ from .promptfile import PromptFileIE
 from .prosiebensat1 import ProSiebenSat1IE
 from .puls4 import Puls4IE
 from .pyvideo import PyvideoIE
+from .quickline import (
+    QuicklineLiveIE,
+    QuicklineVideoIE,
+)
 from .qqmusic import (
     QQMusicIE,
     QQMusicSingerIE,

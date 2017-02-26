@@ -947,6 +947,7 @@ from .telewebion import TelewebionIE
 from .testurl import TestURLIE
 from .tf1 import TF1IE
 from .tfo import TFOIE
+from .thehill import TheHillIE
 from .theintercept import TheInterceptIE
 from .theplatform import (
     ThePlatformIE,

@@ -145,9 +145,11 @@ class ZattooPlatformBaseIE(InfoExtractor):
             'id': ondemand_id,
             'title': data['title'],
             'description': data.get('description'),
+            'duration': int_or_none(data.get('duration')),
             'release_year': int_or_none(data.get('year')),
             'episode_number': int_or_none(data.get('episode_number')),
             'season_number': int_or_none(data.get('season_number')),
+            'categories': try_get(data, lambda x: x['categories'], list),
         }
         return info_dict
 

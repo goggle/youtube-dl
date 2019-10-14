@@ -219,18 +219,9 @@ class ZattooPlatformBaseIE(InfoExtractor):
         self._sort_formats(formats)
         return formats
 
-    def _extract_video(self, channel_name, video_id, record_id=None, is_live=False):
-        if is_live:
-            cid = self._extract_cid(video_id, channel_name)
-            info_dict = {
-                'id': channel_name,
-                'title': self._live_title(channel_name),
-                'is_live': True,
-            }
-        else:
-            cid, info_dict = self._extract_cid_and_video_info(video_id)
-        formats = self._extract_formats(
-            cid, video_id, record_id=record_id, is_live=is_live)
+    def _extract_video(self, channel_name, video_id, record_id=None):
+        cid, info_dict = self._extract_cid_and_video_info(video_id)
+        formats = self._extract_formats(cid, video_id, record_id=record_id)
         info_dict['formats'] = formats
         return info_dict
 
@@ -291,8 +282,8 @@ class QuicklineLiveIE(QuicklineBaseIE):
         return False if QuicklineIE.suitable(url) else super(QuicklineLiveIE, cls).suitable(url)
 
     def _real_extract(self, url):
-        channel_name = video_id = self._match_id(url)
-        return self._extract_video(channel_name, video_id, is_live=True)
+        channel_name = self._match_id(url)
+        return self._extract_live(channel_name)
 
 
 class ZattooBaseIE(ZattooPlatformBaseIE):
@@ -308,19 +299,43 @@ class ZattooIE(ZattooBaseIE):
     _VALID_URL_TEMPLATE = r'''(?x)
                             https?://(?:www\.)?%s/
                             (?:
-                                recordings\?recording=(?P<recid>[0-9]+)|
-                                ondemand\?video=(?P<ondemandid>[A-Za-z0-9]+)|
-                                channels\?channel=(?P<channelid>[^/]+)
+                                .+\?recording=(?P<recid>[0-9]+)|
+                                .+\?video=(?P<ondemandid>[A-Za-z0-9]+)|
+                                .+\?channel=(?P<channelid>[^&]+)(?:
+                                    &program=(?P<programid>\d+)
+                                )?
                             )'''
     _VALID_URL = _make_valid_url(_VALID_URL_TEMPLATE, ZattooBaseIE._HOST)
+    _TESTS = [{
+        'url': 'https://zattoo.com/channels/german?channel=srf_zwei',
+        'only_matching': True,
+    }, {
+        'url': 'https://zattoo.com/guide/german?channel=srf1&program=169860555',
+        'only_matching': True,
+    }, {
+        'url': 'https://zattoo.com/channels/german?channel=3plus&program=169860178',
+        'only_matching': True,
+    }, {
+        'url': 'https://zattoo.com/recordings?recording=193615508',
+        'only_matching': True,
+    }, {
+        'url': 'https://zattoo.com/tc/ptc_recordings_all_recordings?recording=193615420',
+        'only_matching': True,
+    }, {
+        'url': 'https://zattoo.com/ondemand?video=dvSHj79rsRqHuAHFqsYZHdox',
+        'only_matching': True,
+    }]
 
     def _real_extract(self, url):
-        record_id, ondemand_id, channel_id = re.match(self._VALID_URL, url).groups()
+        record_id, ondemand_id, channel_id, program_id = re.match(
+            self._VALID_URL, url).groups()
         if record_id:
             return self._extract_record(record_id)
         elif ondemand_id:
             return self._extract_ondemand(ondemand_id)
         elif channel_id:
+            if program_id:
+                return self._extract_video(channel_id, program_id)
             return self._extract_live(channel_id)
 
 
@@ -358,8 +373,8 @@ class ZattooOldLiveIE(ZattooBaseIE):
         return False if ZattooOldIE.suitable(url) else super(ZattooOldLiveIE, cls).suitable(url)
 
     def _real_extract(self, url):
-        channel_name = video_id = self._match_id(url)
-        return self._extract_video(channel_name, video_id, is_live=True)
+        channel_name = self._match_id(url)
+        return self._extract_live(channel_name)
 
 
 class NetPlusIE(ZattooOldIE):
